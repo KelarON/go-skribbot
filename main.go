@@ -1,8 +1,8 @@
 package main
 
 import (
-	"drawbot/model"
 	"fmt"
+	"go-skribbot/model"
 	"image"
 	"os"
 	"time"
@@ -19,8 +19,8 @@ const (
 )
 
 const (
-	START_POSITION_X = model.CORE_POSITION_X       //818
-	START_POSITION_Y = model.CORE_POSITION_Y - 600 //275
+	START_POSITION_X = model.CORE_POSITION_X
+	START_POSITION_Y = model.CORE_POSITION_Y - 600
 	PICTURE_SIZE     = 80
 	PIXEL_SIZE       = 7
 	DRAWING_TYPE     = DRAWING_TYPE_LINE

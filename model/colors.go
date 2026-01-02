@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	CORE_POSITION_X = -1343
-	CORE_POSITION_Y = 778
+	CORE_POSITION_X = 575
+	CORE_POSITION_Y = 850
 )
 
 // curCol: {0 65535 65535 65535 0 0}
