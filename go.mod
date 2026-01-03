@@ -6,16 +6,20 @@ toolchain go1.24.11
 
 require (
 	github.com/go-vgo/robotgo v1.0.0
+	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/dblohm7/wingoes v0.0.0-20250822163801-6d8e6105c62d // indirect
 	github.com/ebitengine/purego v0.9.1 // indirect
 	github.com/gen2brain/shm v0.1.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.0 // indirect
 	github.com/jezek/xgb v1.2.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3 // indirect
 	github.com/otiai10/gosseract/v2 v2.4.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
@@ -34,4 +38,5 @@ require (
 	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39 // indirect
 	golang.org/x/image v0.33.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
+	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )

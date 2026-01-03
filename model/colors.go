@@ -5,11 +5,6 @@ import (
 	"sort"
 )
 
-const (
-	CORE_POSITION_X = 575
-	CORE_POSITION_Y = 850
-)
-
 // curCol: {0 65535 65535 65535 0 0}
 // curCol: {0 47545 47545 47545 40 0}
 // curCol: {0 60395 4626 5911 88 0}
@@ -37,7 +32,7 @@ const (
 // curCol: {0 50372 27499 18504 520 43}
 // curCol: {0 22616 10794 4883 568 43}
 
-func GetAllowedColors() []*Color {
+func GetAllowedColors(positionX, positionY int) []*Color {
 
 	var allowedColors = []*Color{
 
@@ -252,11 +247,11 @@ func GetAllowedColors() []*Color {
 
 	for i, col := range allowedColors {
 		if i < len(allowedColors)/2 {
-			col.X = CORE_POSITION_X + i*24
-			col.Y = CORE_POSITION_Y
+			col.X = positionX + i*24
+			col.Y = positionY
 		} else {
-			col.X = CORE_POSITION_X + (i-len(allowedColors)/2)*24
-			col.Y = CORE_POSITION_Y + 24
+			col.X = positionX + (i-len(allowedColors)/2)*24
+			col.Y = positionY + 24
 		}
 	}
 

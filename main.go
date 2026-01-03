@@ -1,42 +1,72 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"go-skribbot/config"
 	"go-skribbot/model"
 	"image"
+	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-vgo/robotgo"
 	"github.com/nfnt/resize"
 )
 
-type drawingType int
-
 const (
-	DRAWING_TYPE_LINE = iota
-	DRAWING_TYPE_POINT
-)
-
-const (
-	START_POSITION_X = model.CORE_POSITION_X
-	START_POSITION_Y = model.CORE_POSITION_Y - 600
-	PICTURE_SIZE     = 80
-	PIXEL_SIZE       = 7
-	DRAWING_TYPE     = DRAWING_TYPE_LINE
+	PICTURE_SIZE = 80
+	PIXEL_SIZE   = 7
 )
 
 func main() {
 
-	file, _ := os.Open("image.png")
-	img, _, _ := image.Decode(file)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		if err != config.ErrorNoConfigFile {
+			log.Printf("error loading config: %v", err)
+			exitMessage()
+			return
+		} else {
+			cfg.Save()
+		}
+	}
+	if cfg.PrintCoordsMode {
+		time.Sleep(5 * time.Second)
+		x, y := robotgo.Location()
+		log.Printf("Your coordinates X: %v, Y: %v", x, y)
+		exitMessage()
+		return
+	}
+
+	startPositionX := cfg.PositionX
+	startPositionY := cfg.PositionY - 600
+	drawingType := cfg.DrawingType
+
+	imageName := findImage()
+	if imageName == "" {
+		log.Printf("No image found in the current directory")
+		exitMessage()
+		return
+	}
+
+	file, err := os.Open(imageName)
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+		exitMessage()
+		return
+	}
+	img, _, err := image.Decode(file)
+	if err != nil {
+		log.Printf("error decoding image: %v", err)
+		exitMessage()
+		return
+	}
 	img = resize.Resize(PICTURE_SIZE, PICTURE_SIZE, img, resize.Bicubic)
 	var matrix [PICTURE_SIZE][PICTURE_SIZE]*model.Color
-	allowedColors := model.GetAllowedColors()
-
-	time.Sleep(3 * time.Second)
-
-	fmt.Println(robotgo.Location())
+	allowedColors := model.GetAllowedColors(cfg.PositionX, cfg.PositionY)
 
 	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
 		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
@@ -57,8 +87,9 @@ func main() {
 		}
 	}
 
-	switch DRAWING_TYPE {
-	case DRAWING_TYPE_LINE:
+	switch drawingType {
+	case model.DRAWING_TYPE_LINE:
+		prepareBrush(startPositionX, startPositionY)
 		robotgo.MouseSleep = 20
 		for _, color := range allowedColors[1:] {
 			robotgo.Move(color.X, color.Y)
@@ -75,10 +106,10 @@ func main() {
 						}
 						isLine = true
 						isPont = true
-						robotgo.Move(START_POSITION_X+x*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						robotgo.Move(startPositionX+x*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						pX, pY := robotgo.Location()
-						if pX != START_POSITION_X+x*PIXEL_SIZE || pY != START_POSITION_Y+y*PIXEL_SIZE {
-							robotgo.Move(START_POSITION_X+x*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						if pX != startPositionX+x*PIXEL_SIZE || pY != startPositionY+y*PIXEL_SIZE {
+							robotgo.Move(startPositionX+x*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						}
 						robotgo.MouseDown(robotgo.Mleft)
 						continue
@@ -87,10 +118,15 @@ func main() {
 						if isPont {
 							robotgo.MouseUp(robotgo.Mleft)
 						} else {
-							robotgo.Move(START_POSITION_X+(x-1)*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+							robotgo.Move(startPositionX+(x-1)*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 							pX, pY := robotgo.Location()
-							if pX != START_POSITION_X+(x-1)*PIXEL_SIZE || pY != START_POSITION_Y+y*PIXEL_SIZE {
-								robotgo.Move(START_POSITION_X+(x-1)*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+							if pX < startPositionX-10 {
+								log.Println("Stopped")
+								exitMessage()
+								return
+							}
+							if pX != startPositionX+(x-1)*PIXEL_SIZE || pY != startPositionY+y*PIXEL_SIZE {
+								robotgo.Move(startPositionX+(x-1)*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 							}
 							robotgo.MouseUp(robotgo.Mleft)
 						}
@@ -101,17 +137,18 @@ func main() {
 					if isPont {
 						robotgo.MouseUp(robotgo.Mleft)
 					} else {
-						robotgo.Move(START_POSITION_X+PICTURE_SIZE*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						robotgo.Move(startPositionX+PICTURE_SIZE*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						pX, pY := robotgo.Location()
-						if pX != START_POSITION_X+PICTURE_SIZE*PIXEL_SIZE || pY != START_POSITION_Y+y*PIXEL_SIZE {
-							robotgo.Move(START_POSITION_X+PICTURE_SIZE*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						if pX != startPositionX+PICTURE_SIZE*PIXEL_SIZE || pY != startPositionY+y*PIXEL_SIZE {
+							robotgo.Move(startPositionX+PICTURE_SIZE*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						}
 						robotgo.MouseUp(robotgo.Mleft)
 					}
 				}
 			}
 		}
-	case DRAWING_TYPE_POINT:
+	case model.DRAWING_TYPE_POINT:
+		prepareBrush(startPositionX, startPositionY)
 		robotgo.MouseSleep = 3
 		for _, color := range allowedColors[1:] {
 			robotgo.Move(color.X, color.Y)
@@ -120,15 +157,68 @@ func main() {
 			for y, row := range matrix {
 				for x, pixel := range row {
 					if pixel.Id == color.Id {
-						robotgo.Move(START_POSITION_X+x*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						robotgo.Move(startPositionX+x*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						pX, pY := robotgo.Location()
-						if pX != START_POSITION_X+x*PIXEL_SIZE || pY != START_POSITION_Y+y*PIXEL_SIZE {
-							robotgo.Move(START_POSITION_X+x*PIXEL_SIZE, START_POSITION_Y+y*PIXEL_SIZE)
+						if pX < startPositionX-10 {
+							log.Println("Stopped")
+							exitMessage()
+							return
+						}
+						if pX != startPositionX+x*PIXEL_SIZE || pY != startPositionY+y*PIXEL_SIZE {
+							robotgo.Move(startPositionX+x*PIXEL_SIZE, startPositionY+y*PIXEL_SIZE)
 						}
 						robotgo.Click()
 					}
 				}
 			}
 		}
+	default:
+		log.Println("unknown drawing type, check drawing_type in config.yaml")
+		exitMessage()
+		return
 	}
+	log.Println("Success")
+	exitMessage()
+}
+
+func findImage() string {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		return ""
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() && isImageFile(entry.Name()) {
+			return entry.Name()
+		}
+	}
+	return ""
+}
+
+// isImageFile checks if the file has a common image extension
+func isImageFile(name string) bool {
+	ext := strings.ToLower(filepath.Ext(name))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".svg":
+		return true
+	default:
+		return false
+	}
+}
+
+// set up starting brush and canvas state
+func prepareBrush(startPositionX, startPositionY int) {
+	time.Sleep(3 * time.Second)
+	robotgo.Move(startPositionX, startPositionY)
+	robotgo.KeyPress(robotgo.KeyC)
+	robotgo.KeyPress(robotgo.KeyB)
+	robotgo.ScrollSmooth(-1, 30, 20, 0)
+	robotgo.ScrollSmooth(1, 3, 20, 0)
+}
+
+// exitMessage prompts the user to press Enter to exit the program
+func exitMessage() {
+	fmt.Println("Press Enter to exit")
+	consoleReader := bufio.NewReaderSize(os.Stdin, 1)
+	consoleReader.ReadByte()
 }

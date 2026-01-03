@@ -1,1 +1,5 @@
 /.qodo
+config.yaml
+.vscode
+go-skribbot.exe
+image.png
