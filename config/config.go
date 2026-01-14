@@ -16,10 +16,9 @@ var ErrorNoConfigFile = errors.New("Config file not found")
 
 // Config is the main configuration struct
 type Config struct {
-	PrintCoordsMode bool              `yaml:"print_coords_mode"`
-	PositionX       int               `yaml:"posotion_x"`
-	PositionY       int               `yaml:"position_y"`
-	DrawingType     model.DrawingType `yaml:"drawing_type"`
+	PositionX   int               `yaml:"posotion_x"`
+	PositionY   int               `yaml:"position_y"`
+	DrawingType model.DrawingType `yaml:"drawing_type"`
 }
 
 // LoadConfig loads the config from config file
@@ -28,7 +27,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{}
 
 	if !configFileExists() {
-		cfg.PrintCoordsMode = true
+		cfg.DrawingType = model.DRAWING_TYPE_LINE
 		return cfg, ErrorNoConfigFile
 	}
 

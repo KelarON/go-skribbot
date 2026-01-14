@@ -2,4 +2,5 @@
 config.yaml
 .vscode
 go-skribbot.exe
-image.png
+logs/
+go-skribbot.app

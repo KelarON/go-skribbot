@@ -1,0 +1,6 @@
+[Details]
+  Icon = "resources/src/icon.png"
+  Name = "Go-Skribbot"
+  ID = "com.kelaron.goskribbot"
+  Version = "1.0.0"
+  Build = 2
